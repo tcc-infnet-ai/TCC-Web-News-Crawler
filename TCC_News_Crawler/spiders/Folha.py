@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from TCC_News_Crawler.items import NewsHeadline
+from TCC_News_Crawler.items import NewsBody
 
 class FolhaSpider(scrapy.Spider):
     name = 'Folha'
@@ -9,18 +9,29 @@ class FolhaSpider(scrapy.Spider):
 
     def parse(self, response):
         for article in response.css("li.c-headline"):
-            label          = article.css("div.c-headline__head h3.c-headline__kicker a::text").extract_first()
-            link           = article.css("div.c-headline__content a::attr(href)").extract_first()
-            title          = article.css("div.c-headline__content a h2.c-headline__title::text").extract_first()
-            standFirst     = article.css("div.c-headline__content a p.c-headline__standfirst::text").extract_first()
-            datePublished  = article.css("div.c-headline__content a time.c-headline__dateline::attr(datetime)").extract_first()
+            link = article.css("div.c-headline__content a::attr(href)").extract_first()
 
-            newsHeadline = NewsHeadline(
-                label = label, 
-                link = link, 
-                title = title, 
-                standFirst = standFirst, 
-                datePublished = datePublished
-            )
+            yield response.follow(link, self.parse_news_body)
 
-            yield newsHeadline
+    def parse_news_body(self, response):
+        link           = response.url
+        label          = response.css("header.c-content-head div.c-content-head__wrap div.c-labels span.c-labels__item a::text").extract_first()
+        title          = response.css("header.c-content-head div.c-content-head__wrap h1.c-content-head__title::text").extract_first()
+        subTitle       = response.css("header.c-content-head div.c-content-head__wrap h2.c-content-head__subtitle::text").extract_first()
+        datePublished  = response.css("div.c-more-options div.c-more-options__header time.c-more-options__published-date::attr(datetime)").extract_first()
+        authors        = response.css("div.c-news__wrap div.c-signature strong.c-signature__author::text").extract()
+        location       = response.css("div.c-news__content div.c-signature strong.c-signature__location::text").extract_first()
+        newsText   =  "".join(response.css("div.c-news__body p::text").extract())
+
+        newsBody = NewsBody(
+            label = label,
+            link = link,
+            title = title,
+            subTitle = subTitle,
+            datePublished = datePublished,
+            authors = authors,
+            location = location,
+            newsText = newsText
+        )
+        yield newsBody
+
