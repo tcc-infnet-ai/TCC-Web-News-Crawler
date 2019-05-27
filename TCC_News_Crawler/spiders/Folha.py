@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
-
+from TCC_News_Crawler.items import NewsHeadline
 
 class FolhaSpider(scrapy.Spider):
     name = 'Folha'
@@ -15,4 +15,12 @@ class FolhaSpider(scrapy.Spider):
             standFirst     = article.css("div.c-headline__content a p.c-headline__standfirst::text").extract_first()
             datePublished  = article.css("div.c-headline__content a time.c-headline__dateline::attr(datetime)").extract_first()
 
-            yield {'label': label, 'link': link, 'title': title, 'standFirst': standFirst, 'datePublished': datePublished }
+            newsHeadline = NewsHeadline(
+                label = label, 
+                link = link, 
+                title = title, 
+                standFirst = standFirst, 
+                datePublished = datePublished
+            )
+
+            yield newsHeadline
