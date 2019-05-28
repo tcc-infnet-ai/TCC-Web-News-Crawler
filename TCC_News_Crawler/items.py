@@ -13,11 +13,11 @@ class TccNewsCrawlerItem(scrapy.Item):
     pass
 
 class NewsBody(scrapy.Item):
-    label = scrapy.Field()
+    categories = scrapy.Field()
     link = scrapy.Field()
     title = scrapy.Field()
-    subTitle = scrapy.Field()
-    datePublished = scrapy.Field()
+    sub_title = scrapy.Field()
+    date_published = scrapy.Field()
     authors = scrapy.Field()
     location = scrapy.Field()
-    newsText = scrapy.Field()
+    paragraphs = scrapy.Field()
