@@ -7,41 +7,41 @@ class FolhaSpider(scrapy.Spider):
     name = 'Folha'
     allowed_domains = ['folha.uol.com.br']
     # Looking for news related to Bolsonaro's government
-    start_urls = ['https://www1.folha.uol.com.br/especial/2018/governo-bolsonaro/']
+    start_urls = ['https://search.folha.uol.com.br/search?q=governo+bolsonaro&periodo=personalizado&sd=01%2F07%2F2018&ed=28%2F05%2F2019&site=sitefolha&site%5B%5D=online%2Fpaineldoleitor&site%5B%5D=online%2Fdinheiro&site%5B%5D=online%2Fmundo']
 
     # Main parse function which crawls the first page to get the list of the news links
     def parse(self, response):
-
-        # Get's the news that is highlighted in the front page
-        highlightNewsLink = response.css("div.c-main-headline__wrapper a.c-main-headline__url::attr(href)").extract_first()
-        yield response.follow(highlightNewsLink, self.parse_news_body)
-
         # Get's the other news
-        for article in response.css("li.c-headline"):
+        for article in response.css("ol.c-search li.c-headline--newslist"):
             link = article.css("div.c-headline__content a::attr(href)").extract_first()
 
             yield response.follow(link, self.parse_news_body)
 
+        next_page = response.css('nav.c-pagination ul.c-pagination__list li.c-pagination__arrow:last-child a::attr(href)').extract_first()
+        
+        if next_page is not None:
+            yield response.follow(next_page, self.parse)
+
     # Parse function of the news individual page. This one get's the news detailed information
     def parse_news_body(self, response):
         link           = response.url
-        label          = response.css("header.c-content-head div.c-content-head__wrap div.c-labels span.c-labels__item a::text").extract_first()
+        categories     = response.css("header.l-header div.l-header__nav nav.c-site-nav__group ul.c-site-nav__list li.c-site-nav__item a::text").extract()
         title          = response.css("header.c-content-head div.c-content-head__wrap h1.c-content-head__title::text").extract_first()
-        subTitle       = response.css("header.c-content-head div.c-content-head__wrap h2.c-content-head__subtitle::text").extract_first()
-        datePublished  = response.css("div.c-more-options div.c-more-options__header time.c-more-options__published-date::attr(datetime)").extract_first()
-        authors        = response.css("div.c-news__wrap div.c-signature strong.c-signature__author::text").extract()
-        location       = response.css("div.c-news__content div.c-signature strong.c-signature__location::text").extract_first()
-        newsText   =  "".join(response.css("div.c-news__body p::text").extract())
+        sub_title      = response.css("header.c-content-head div.c-content-head__wrap h2.c-content-head__subtitle::text").extract_first()
+        date_published = response.css("article div.c-more-options div.c-more-options__header time.c-more-options__published-date::attr(datetime)").extract_first()
+        authors        = response.css("article div.c-news__wrap div.c-signature strong.c-signature__author::text").extract()
+        location       = response.css("article div.c-news__content div.c-signature strong.c-signature__location::text").extract_first()
+        paragraphs     = response.css("article div.c-news__content div.c-news__body p::text").extract()
 
         newsBody = NewsBody(
-            label = label,
+            categories = categories,
             link = link,
             title = title,
-            subTitle = subTitle,
-            datePublished = datePublished,
+            sub_title = sub_title,
+            date_published = date_published,
             authors = authors,
             location = location,
-            newsText = newsText
+            paragraphs = paragraphs
         )
         yield newsBody
 
